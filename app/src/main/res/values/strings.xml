@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">My Sudoku</string>
+    <string name="menu_new">New</string>
+    <string name="menu_hint">Hint</string>
+    <string name="menu_solve">Solve</string>
+    <string name="menu_about">About</string>
+    <string name="level_beginner">Beginner</string>
+    <string name="level_novice">Novice</string>
+    <string name="level_intermediate">Intermediate</string>
+    <string name="level_advanced">Advanced</string>
+    <string name="level_master">Master</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+</resources>

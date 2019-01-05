@@ -1,0 +1,4 @@
+<resources>
+    <!-- App Integer Constants. -->
+    <integer name="sudokuSize">9</integer>
+</resources>

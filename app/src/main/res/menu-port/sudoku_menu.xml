@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/init"
+        android:icon="@drawable/ic_home_black_24dp"
+        android:title="@string/menu_new" >
+        <!-- "Level" submenu -->
+        <menu>
+            <item android:id="@+id/new_beginner"
+                android:title="@string/level_beginner"
+                android:onClick="newPuzzle" />
+            <item android:id="@+id/new_novice"
+                android:title="@string/level_novice"
+                android:onClick="newPuzzle" />
+            <item android:id="@+id/new_intermediate"
+                android:title="@string/level_intermediate"
+                android:onClick="newPuzzle" />
+            <item android:id="@+id/new_advanced"
+                android:title="@string/level_advanced"
+                android:onClick="newPuzzle" />
+            <item android:id="@+id/new_master"
+                android:title="@string/level_master"
+                android:onClick="newPuzzle" />
+        </menu>
+    </item>
+    <item android:id="@+id/solve"
+        android:icon="@drawable/ic_notifications_black_24dp"
+        android:title="@string/menu_solve"
+        android:onClick="solvePuzzle" />
+    <item android:id="@+id/about"
+        android:icon="@drawable/ic_notifications_black_24dp"
+        android:title="@string/menu_about"
+        android:onClick="aboutPuzzle" />
+</menu>
