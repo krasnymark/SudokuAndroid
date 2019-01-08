@@ -128,6 +128,11 @@ public class SudokuCell
         return availableMoves;
     }
 
+    public boolean isAvailable(int number)
+    {
+        return available[number] > 0;
+    }
+
     private void setAvailable(int number)
     {
         this.available[number]++;
