@@ -96,6 +96,12 @@ public class SudokuState implements PuzzleState
 //                : board.getCellsWithoutNumbers().size() == 0;
     }
 
+    @Override
+    public void reset()
+    {
+        board.getCells().stream().filter(cell -> !cell.isInitial()).forEach(cell -> cell.removeNumber());
+    }
+
     public void setInitial()
     {
         board.getCells().forEach(cell -> cell.setInitial(cell.getNumber() > 0));

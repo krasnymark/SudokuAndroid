@@ -110,7 +110,7 @@ public class SudokuPuzzle implements Puzzle
     {
         // 1. Remove some cells from STate, keep just enough for the "Level" to solve.
         // 2. Estimate difficulty
-        Random r = new Random();
+        Random r = new Random(System.currentTimeMillis());
         state.getBoard().getCells().stream().filter(cell -> r.nextInt(81) > level.initialFill).forEach(cell -> cell.removeNumber());
         state.setInitial();
     }
@@ -157,6 +157,24 @@ public class SudokuPuzzle implements Puzzle
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean solve()
+    {
+        setGoal(PuzzleGoal.Solve);
+        if (solver.solveInPlace(state))
+        {
+            logger.info("Solved level: " + level + state);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void reset()
+    {
+        getState().reset();
     }
 
     @Override

@@ -17,6 +17,7 @@ public class SudokuCell
     private int number = 0; // 1 -> 9 - Cell value
     private int size = 9; // Default .. forever
     private boolean isInitial; // = read-only
+    private boolean isHint;
     private int[] available; // Numbers available for cell
     private Set<SudokuCell> teammates = new TreeSet<>(new Comparator<SudokuCell>() // Cells on the same row/column + in the same small 3*3 square
     {
@@ -90,6 +91,16 @@ public class SudokuCell
     public void setInitial(boolean initial)
     {
         isInitial = initial;
+    }
+
+    public boolean isHint()
+    {
+        return isHint;
+    }
+
+    public void setHint(boolean hint)
+    {
+        isHint = hint;
     }
 
     private void setAvailable(int[] available)

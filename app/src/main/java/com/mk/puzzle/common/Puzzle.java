@@ -13,6 +13,8 @@ public interface Puzzle
     default int getTimeLimit() {return 10;};
     default void load() {};
     default void init() {};
+    default void reset() {};
+    default boolean solve() {return false;};
     default void generate() {}
     default void setState(PuzzleState state) {};
     default void setGoal(PuzzleGoal goal) { }

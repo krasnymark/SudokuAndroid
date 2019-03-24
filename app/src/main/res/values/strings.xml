@@ -3,7 +3,11 @@
     <string name="menu_new">New</string>
     <string name="menu_hint">Hint</string>
     <string name="menu_solve">Solve</string>
+    <string name="menu_reset">Reset</string>
     <string name="menu_about">About</string>
+    <string name="info_level">Level:</string>
+    <string name="info_difficulty">Difficulty:</string>
+    <string name="info_time">Time:</string>
     <string name="level_beginner">Beginner</string>
     <string name="level_novice">Novice</string>
     <string name="level_intermediate">Intermediate</string>

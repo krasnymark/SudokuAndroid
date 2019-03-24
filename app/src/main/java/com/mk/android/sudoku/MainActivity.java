@@ -3,6 +3,7 @@ package com.mk.android.sudoku;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.os.AsyncTask;
@@ -22,6 +23,7 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
+import com.mk.puzzle.common.Logger;
 import com.mk.puzzle.common.Puzzle;
 import com.mk.puzzle.common.PuzzleGoal;
 import com.mk.puzzle.common.PuzzleSolver;
@@ -30,22 +32,36 @@ import com.mk.puzzle.sudoku.SudokuPuzzle;
 import com.mk.puzzle.sudoku.SudokuState;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 @TargetApi(24)
 public class MainActivity extends AppCompatActivity
 {
+    private final Logger logger = Logger.getLogger(getClass());
     public static final int count = 9;
     protected static int id = 100;
 
     private final CurrentInput currentInput = new CurrentInput();
     private Map<Point,SudokuButton> btnMap = new HashMap<>(count * count);
     private SudokuPuzzle puzzle = new SudokuPuzzle();
-    private PuzzleGoal goal;
     private Context context;
     private TableRow.LayoutParams rlp = new TableRow.LayoutParams(0, TableRow.LayoutParams.WRAP_CONTENT);
     private int padding = 1;
     private PuzzleTimer timer;
+    enum ButtonType
+    {
+        Default(1.05f, Color.GRAY),
+        Initial(1.20f, Color.BLACK),
+        Hint(1.30f, Color.argb(160, 160, 60, 60)); // R.color.colorBtnHint // TODO - Animate
+        float scale;
+        int color;
+        ButtonType(float scale, int color)
+        {
+            this.scale = scale;
+            this.color = color;
+        }
+    }
 
     /**
      * Need a final value object to store values in onClick methods
@@ -71,28 +87,24 @@ public class MainActivity extends AppCompatActivity
         SudokuPuzzle puzzle; // Need ref to access in AsyncTask
         Point point;
         ToggleButton btnView = new ToggleButton(context); // May change the view to something else?
-        float defaultScaleX = 1.05f;
-        float initialScaleX = 1.15f;
 
-        public SudokuButton(SudokuPuzzle puzzle, int x, int y)
+        SudokuButton(SudokuPuzzle puzzle, int x, int y)
         {
             this.puzzle = puzzle;
             point = new Point(x, y);
             setId(x, y, ++id);
             btnView.setId(id);
             SudokuButton self = this;
-            btnView.setOnClickListener(new View.OnClickListener()
+            btnView.setOnClickListener(view ->
             {
-                @Override
-                public void onClick(View v)
+                btnMap.values().forEach(SudokuButton::unhighlight);
+                if (currentInput.button != null && currentInput.button != self)
                 {
-                    btnMap.values().forEach(btn -> btn.unhighlight());
-                    if (currentInput.button != null && currentInput.button != self)
-                    {
-                        currentInput.uncheck(); // Only one checked - aka radio
-                    }
-                    currentInput.button = self;
-                    if (btnView.isChecked())
+                    currentInput.uncheck(); // Only one checked - aka radio
+                }
+                currentInput.button = self;
+                if (btnView.isChecked())
+                {
                     getCell().getTeammates().forEach(mate ->
                     {
                         Point p = mate.getPoint();
@@ -101,20 +113,16 @@ public class MainActivity extends AppCompatActivity
                     });
                 }
             });
-            btnView.setOnLongClickListener(new View.OnLongClickListener()
+            btnView.setOnLongClickListener(view ->
             {
-                @Override
-                public boolean onLongClick(View v)
-                {
-                    setValue(0);
-                    return true;
-                }
+                setValue(0);
+                return true;
             });
             setValue(0); // x + "." + y
             btnView.setLayoutParams(rlp);
             btnView.setPadding(padding,padding,padding,padding);
             setEnabled(true);
-            setNormalColor();
+            setButtonType(ButtonType.Default);
         }
 
         public SudokuCell getCell()
@@ -124,34 +132,30 @@ public class MainActivity extends AppCompatActivity
         }
 
         // Delegate to view
-        public void setEnabled(boolean b)
+        void setEnabled(boolean b)
         {
             btnView.setEnabled(b);
         }
-        public void setTextColor(int color)
+        void setTextColor(int color)
         {
             btnView.setTextColor(color);
         }
-        public void highlight()
+        void highlight()
         {
             btnView.getBackground().setAlpha(205);
         }
-        public void unhighlight()
+        void unhighlight()
         {
             btnView.getBackground().setAlpha(255);
         }
-        public void highlightError()
+        void highlightError()
         {
             btnView.setTextColor(Color.RED);
         }
-        public void setNormalColor()
+        void setButtonType(ButtonType buttonType)
         {
-            btnView.setTextColor(Color.DKGRAY);
-        }
-        public void setInitialColor()
-        {
-            btnView.setTextColor(Color.BLACK);
-            btnView.setTextScaleX(initialScaleX);
+            btnView.setTextColor(buttonType.color);
+            btnView.setTextScaleX(buttonType.scale);
         }
 
         public void setValue(int number)
@@ -193,37 +197,33 @@ public class MainActivity extends AppCompatActivity
         int number;
         Button btn = new Button(context);
 
-        public InputButton(int number)
+        InputButton(int number)
         {
             this.number = number;
             btn.setLayoutParams(rlp);
-            btn.setText("" + number);
-            btn.setOnClickListener(new View.OnClickListener()
+            btn.setText(String.valueOf(number));
+            btn.setOnClickListener(view ->
             {
-                @Override
-                public void onClick(View v)
+                if (currentInput.button != null)
                 {
-                    if (currentInput.button != null)
+                    String text = String.valueOf(btn.getText());
+                    int number1 = Integer.valueOf(text);
+                    currentInput.button.setValue(0);
+                    if (currentInput.button.getCell().isAvailable(number1))
                     {
-                        String text = String.valueOf(btn.getText());
-                        int number = Integer.valueOf(text);
-                        currentInput.button.setValue(0);
-                        if (currentInput.button.getCell().isAvailable(number))
-                        {
-                            // Good move!
-                            currentInput.button.setNormalColor();
-                        }
-                        else
-                        {
-                            currentInput.button.highlightError();
-                        }
-                        currentInput.button.setValue(number);
-                        if (puzzle.isSolved())
-                        {
-                            timer.stop();
-                            // Tell the user .. like they don't know already :)
-                            puzzleSolved();
-                        }
+                        // Good move!
+                        currentInput.button.setButtonType(ButtonType.Default);
+                    }
+                    else
+                    {
+                        currentInput.button.highlightError();
+                    }
+                    currentInput.button.setValue(number1);
+                    if (puzzle.isSolved())
+                    {
+                        timer.stop();
+                        // Tell the user .. like they don't know already :)
+                        puzzleSolved();
                     }
                 }
             });
@@ -248,7 +248,8 @@ public class MainActivity extends AppCompatActivity
             {
                 long currentPause = isPaused() ? System.currentTimeMillis() - pauseStart : 0;
                 puzzleTime = System.currentTimeMillis() - startTime - pauseTime - currentPause;
-                timerText.setText("Time: " + getPuzzleTime());
+                logger.debug("R.id.puzzleTime: " + R.id.puzzleTime + " timerText: " + timerText);
+                timerText.setText(getPuzzleTime());
                 timerHandler.postDelayed(this, 500);
             }
         };
@@ -262,21 +263,21 @@ public class MainActivity extends AppCompatActivity
         {
             timerHandler.removeCallbacks(timerRunnable);
         }
-        public void pause()
+        void pause()
         {
             setPaused(true);
             pauseStart = System.currentTimeMillis();
             table.setVisibility(View.INVISIBLE);
             invalidateOptionsMenu();
         }
-        public void unpause()
+        void unpause()
         {
             setPaused(false);
             pauseTime += System.currentTimeMillis() - pauseStart;
             table.setVisibility(View.VISIBLE);
             invalidateOptionsMenu();
         }
-        public boolean isPaused()
+        boolean isPaused()
         {
             return isPaused;
         }
@@ -290,13 +291,13 @@ public class MainActivity extends AppCompatActivity
             int seconds = (int) (puzzleTime / 1000);
             int minutes = seconds / 60;
             seconds = seconds % 60;
-            return String.format("%d:%02d", minutes, seconds);
+            return String.format(Locale.getDefault(), "%d:%02d", minutes, seconds);
         }
 
-        public String getPuzzleTimeWithMillis()
+        String getPuzzleTimeWithMillis()
         {
             int millis = (int) (puzzleTime % 1000);
-            return getPuzzleTime() + String.format(".%03d", millis);
+            return getPuzzleTime() + String.format(Locale.getDefault(), ".%03d", millis);
         }
     }
 
@@ -310,23 +311,34 @@ public class MainActivity extends AppCompatActivity
             currentInput.uncheck();
             currentInput.button = null;
             SudokuState state = (SudokuState) puzzle.getState();
-            if (getGoal() == PuzzleGoal.Solve)
+            switch (getGoal())
             {
-                timer.stop();
-                if (puzzle.isSolved())
+                case Solve:
                 {
-                    puzzleSolved();
+                    timer.stop();
+                    if (puzzle.isSolved())
+                    {
+                        puzzleSolved();
+                    }
+                    else
+                    {
+                        failedToSolve();
+                    }
+                    break;
                 }
-                else
+                case Generate:
                 {
-                    failedToSolve();
+                    TextView puzzleDifficulty = findViewById(R.id.puzzleDifficulty);
+                    logger.debug("R.id.puzzleDifficulty: " + R.id.puzzleDifficulty + " puzzleDifficulty: " + puzzleDifficulty);
+                    puzzleDifficulty.setText(String.valueOf(puzzle.getDifficulty())); // This is bogus. TODO - Total branches while solving it
+//                    timer.start(); // No need it'll continue thru reset
+//                    break;
                 }
-            }
-            if (getGoal() == PuzzleGoal.Generate)
-            {
-                TextView puzzleDifficulty = findViewById(R.id.puzzleDifficulty);
-                puzzleDifficulty.setText("Difficulty: " + puzzle.getDifficulty()); // This is bogus. TODO - Total branches while solving it
-                timer.start();
+                case Reset:
+                {
+                    timer.start();
+                    break;
+                }
             }
             state.getBoard().getCells().forEach(cell ->
             {
@@ -336,15 +348,19 @@ public class MainActivity extends AppCompatActivity
                 {
                     sb.unhighlight();
                     sb.setValue(cell.getNumber());
+                    sb.setEnabled(true);
                     if (cell.isInitial())
                     {
                         sb.setEnabled(false);
-                        sb.setInitialColor();
+                        sb.setButtonType(ButtonType.Initial);
+                    }
+                    else if (cell.isHint())
+                    {
+                        sb.setButtonType(ButtonType.Hint);
                     }
                     else
                     {
-                        sb.setEnabled(true);
-                        sb.setNormalColor();
+                        sb.setButtonType(ButtonType.Default);
                     }
                 }
                 else
@@ -365,7 +381,7 @@ public class MainActivity extends AppCompatActivity
             return PuzzleGoal.Generate;
         }
 
-        public PuzzleGenerateTask(SudokuPuzzle.Level level)
+        PuzzleGenerateTask(SudokuPuzzle.Level level)
         {
             this.level = level;
         }
@@ -406,6 +422,55 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+    class PuzzleHintTask extends PuzzleTask
+    {
+        @Override
+        PuzzleGoal getGoal()
+        {
+            return PuzzleGoal.Hint;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values)
+        {
+            super.onProgressUpdate(values);
+        }
+
+        @Override
+        protected Puzzle doInBackground(Puzzle... puzzleContext)
+        {
+            SudokuPuzzle puzzle = (SudokuPuzzle) puzzleContext[0];
+            PuzzleSolver puzzleSolver = new PuzzleSolver(puzzle);
+            puzzle.setGoal(PuzzleGoal.Hint);
+//            timer.start();
+            puzzleSolver.applyHint(puzzle.getState());
+            return puzzle;
+        }
+    }
+
+    class PuzzleResetTask extends PuzzleTask
+    {
+        @Override
+        PuzzleGoal getGoal()
+        {
+            return PuzzleGoal.Reset;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values)
+        {
+            super.onProgressUpdate(values);
+        }
+
+        @Override
+        protected Puzzle doInBackground(Puzzle... puzzleContext)
+        {
+            SudokuPuzzle puzzle = (SudokuPuzzle) puzzleContext[0];
+            puzzle.reset();
+            return puzzle;
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
@@ -437,7 +502,8 @@ public class MainActivity extends AppCompatActivity
         {
             SudokuPuzzle.Level level = SudokuPuzzle.Level.valueOf(item.toString());
             TextView puzzleLevel = findViewById(R.id.puzzleLevel);
-            puzzleLevel.setText("Level: " + level.name());
+            logger.debug("R.id.puzzleLevel: " + R.id.puzzleLevel + " puzzleLevel: " + puzzleLevel);
+            puzzleLevel.setText(level.name());
             PuzzleGenerateTask puzzleGenerateTask = new PuzzleGenerateTask(level);
             puzzleGenerateTask.execute(puzzle);
             return true;
@@ -455,6 +521,36 @@ public class MainActivity extends AppCompatActivity
         {
             PuzzleSolveTask puzzleSolveTask = new PuzzleSolveTask();
             puzzleSolveTask.execute(puzzle);
+            return true;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean hintNext(MenuItem item)
+    {
+        try
+        {
+            PuzzleHintTask puzzleSolveTask = new PuzzleHintTask();
+            puzzleSolveTask.execute(puzzle);
+            return true;
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean resetPuzzle(MenuItem item)
+    {
+        try
+        {
+            PuzzleResetTask puzzleResetTask = new PuzzleResetTask();
+            puzzleResetTask.execute(puzzle);
             return true;
         }
         catch (Exception e)
@@ -484,14 +580,7 @@ public class MainActivity extends AppCompatActivity
         AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
         alertDialog.setTitle(text);
         alertDialog.setMessage("In: " + timer.getPuzzleTimeWithMillis());
-        alertDialog.setButton(whichButton, "OK",
-                new DialogInterface.OnClickListener()
-                {
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                        dialog.dismiss();
-                    }
-                });
+        alertDialog.setButton(whichButton, "OK", (DialogInterface dialog, int which) -> dialog.dismiss());
         alertDialog.show();
         currentInput.button = null;
     }
@@ -562,4 +651,8 @@ public class MainActivity extends AppCompatActivity
         divider.setBackgroundColor(Color.WHITE);
         return divider;
     }
-}
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        setContentView(R.layout.activity_main);
+    }}

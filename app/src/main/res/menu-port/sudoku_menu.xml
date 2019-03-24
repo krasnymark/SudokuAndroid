@@ -26,6 +26,14 @@
         android:icon="@drawable/ic_notifications_black_24dp"
         android:title="@string/menu_solve"
         android:onClick="solvePuzzle" />
+    <item android:id="@+id/hint"
+        android:icon="@drawable/ic_notifications_black_24dp"
+        android:title="@string/menu_hint"
+        android:onClick="hintNext" />
+    <item android:id="@+id/reset"
+        android:icon="@drawable/ic_notifications_black_24dp"
+        android:title="@string/menu_reset"
+        android:onClick="resetPuzzle" />
     <item android:id="@+id/about"
         android:icon="@drawable/ic_notifications_black_24dp"
         android:title="@string/menu_about"

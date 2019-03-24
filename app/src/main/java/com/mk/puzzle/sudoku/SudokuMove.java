@@ -54,6 +54,12 @@ public class SudokuMove implements PuzzleMove
     }
 
     @Override
+    public void setHint(boolean isHint)
+    {
+        getCell().setHint(isHint);
+    }
+
+    @Override
     public String getKey()
     {
         return "" + cell.getAvailableCount() * 1000 + cell.getPoint().x * 100 + cell.getPoint().y * 10 + number;

@@ -9,4 +9,5 @@ public interface PuzzleState
 	void takeBack(PuzzleMove move);
 	boolean isSolved();
 	PuzzleState clone();
+	default void reset() {};
 }

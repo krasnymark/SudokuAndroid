@@ -90,6 +90,19 @@ public class PuzzleSolver
 		return false;
 	}
 
+	public boolean applyHint(PuzzleState state)
+	{
+		List <? extends PuzzleMove> availableMoves = state.getAvailableMoves();
+		if (availableMoves.size() > 0)
+		{
+			PuzzleMove move = availableMoves.get(0);
+			move.setHint(true);
+			state.applyMove(move);
+			return true;
+		}
+		return false;
+	}
+
     public boolean solveInPlace(PuzzleState state)
     {
         return solveInPlace(state, moves);
